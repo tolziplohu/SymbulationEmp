@@ -148,12 +148,11 @@ public:
       }
     }
     // Check input tasks
-    emp::vector<uint32_t> inputs;
     for (size_t i = 0; i < state.input_buf.size(); i++) {
       if (state.input_buf[i] == 0)
         continue;
 
-      inputs = {state.input_buf[i], state.input_buf[i + 1]};
+      emp::vector<uint32_t> inputs{state.input_buf[i], state.input_buf[i + 1]};
       for (size_t i = 0; i < tasks.size(); i++) {
         Task &task = tasks[i];
         if (std::holds_alternative<InputTask>(task.kind) &&

@@ -3,7 +3,6 @@
 
 #include "../Organism.h"
 #include "../default_mode/SymWorld.h"
-#include "sgpl/utility/ThreadLocalRandom.hpp"
 #include <atomic>
 #include <condition_variable>
 #include <emp/base/vector.hpp>
@@ -40,7 +39,7 @@ class Scheduler {
    */
   void RunThread(size_t i) {
     // Make sure each thread gets a different, deterministic, seed
-    sgpl::tlrand.Get().ResetSeed(i);
+    // sgpl::tlrand.Get().ResetSeed(i);
     size_t last_update = -1;
     while (true) {
       if (!finished && last_update == update) {

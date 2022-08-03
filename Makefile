@@ -2,9 +2,10 @@
 TEST_DIR := source/catch
 EMP_DIR := Empirical/include
 SGP_DIR := signalgp-lite/include
+ASMJIT_DIR := asmjit/src
 
 # Flags to use regardless of compiler
-CFLAGS_all := -Wall -Wno-unused-function -std=c++17 -I$(EMP_DIR)/ -I$(SGP_DIR)/
+CFLAGS_all := -Wall -Wno-unused-function -std=c++17 -I$(EMP_DIR)/ -I$(SGP_DIR)/ -I$(ASMJIT_DIR)
 
 # Native compiler information
 CXX_nat := g++
@@ -46,7 +47,7 @@ pgg-mode:	source/native/symbulation_pgg.cc
 	$(CXX_nat) $(CFLAGS_nat) source/native/symbulation_pgg.cc -o symbulation_pgg
 
 sgp-mode:	source/native/symbulation_sgp.cc
-	$(CXX_nat) $(CFLAGS_nat) source/native/symbulation_sgp.cc -o symbulation_sgp 
+	$(CXX_nat) $(CFLAGS_nat) source/native/symbulation_sgp.cc asmjit/build/libasmjit.a -o symbulation_sgp 
 
 symbulation.js: source/web/symbulation-web.cc
 	$(CXX_web) $(CFLAGS_web) source/web/symbulation-web.cc -o web/symbulation.js
@@ -74,6 +75,10 @@ lysis-debug: debug-lysis
 debug-pgg: CFLAGS_nat := $(CFLAGS_nat_debug)
 debug-pgg: pgg-mode 
 pgg-debug: debug-pgg
+
+debug-sgp: CFLAGS_nat := $(CFLAGS_nat_debug)
+debug-sgp: sgp-mode 
+sgp-debug: debug-sgp
 
 debug-web:	CFLAGS_web := $(CFLAGS_web_debug)
 debug-web:	symbulation.js

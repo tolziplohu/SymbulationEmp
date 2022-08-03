@@ -33,13 +33,13 @@ public:
               emp::Ptr<SymConfigBase> _config, const CPU &oldCpu,
               double _intval = 0.0, double _points = 0.0)
       : Symbiont(_random, _world, _config, _intval, _points),
-        cpu(this, _world, _random, oldCpu.GetProgram()) {
+        cpu(this, _world, _random, oldCpu.genome) {
     my_world = _world;
   }
 
   SGPSymbiont(const SGPSymbiont &symbiont)
-      : Symbiont(symbiont), cpu(this, symbiont.my_world, symbiont.random,
-                                symbiont.cpu.GetProgram()),
+      : Symbiont(symbiont),
+        cpu(this, symbiont.my_world, symbiont.random, symbiont.cpu.genome),
         my_world(symbiont.my_world) {}
 
   /**
@@ -54,6 +54,7 @@ public:
     if (!my_host) {
       cpu.state.used_resources.Delete();
       cpu.state.shared_completed.Delete();
+      cpu.state.internalEnvironment.Delete();
     }
     // Invalidate any in-progress reproduction
     if (cpu.state.in_progress_repro != -1) {
@@ -73,6 +74,7 @@ public:
     if (!my_host) {
       cpu.state.used_resources.Delete();
       cpu.state.shared_completed.Delete();
+      cpu.state.internalEnvironment.Delete();
     }
     Symbiont::SetHost(host);
     cpu.state.used_resources =

@@ -7,3 +7,6 @@
 [submodule "signalgp-lite"]
 	path = signalgp-lite
 	url = https://github.com/tolziplohu/signalgp-lite
+[submodule "asmjit"]
+	path = asmjit
+	url = https://github.com/asmjit/asmjit

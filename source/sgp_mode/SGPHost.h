@@ -36,15 +36,13 @@ public:
           emp::vector<emp::Ptr<Organism>> _repro_syms = {},
           double _points = 0.0)
       : Host(_random, _world, _config, _intval, _syms, _repro_syms, _points),
-        cpu(this, _world, _random, old_cpu.GetProgram()) {
+        cpu(this, _world, _random, old_cpu.genome) {
     my_world = _world;
   }
 
   SGPHost(const SGPHost &host)
-      : Host(host),
-        cpu(this, host.my_world, host.random, host.cpu.GetProgram()),
-        my_world(host.my_world) {
-  }
+      : Host(host), cpu(this, host.my_world, host.random, host.cpu.genome),
+        my_world(host.my_world) {}
 
   /**
    * Input: None

@@ -5,6 +5,7 @@
 #include "Scheduler.h"
 #include "Tasks.h"
 #include "emp/data/DataNode.hpp"
+#include "asmjit/core/jitruntime.h"
 
 /// Helper which synchronizes access to the DataMonitor with a mutex
 template <typename T, emp::data... MODS> class SyncDataMonitor {
@@ -46,6 +47,7 @@ private:
   emp::vector<emp::DataMonitor<size_t>> data_node_sym_tasks;
 
 public:
+  asmjit::JitRuntime rt;
   emp::vector<std::pair<emp::Ptr<Organism>, emp::WorldPosition>> to_reproduce;
 
   SGPWorld(emp::Random &r, emp::Ptr<SymConfigBase> _config, TaskSet task_set)
