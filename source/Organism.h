@@ -2,6 +2,8 @@
 #define ORGANISM_H
 
 #include <string>
+#include <limits>
+#include <emp/Evolve/Systematics.hpp>
 #include "ConfigSetup.h"
 
 class Organism {

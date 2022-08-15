@@ -8,7 +8,7 @@
 
 
 void worldSetup(emp::Ptr<SymWorld> world, emp::Ptr<SymConfigBase> my_config) {
-// params
+  // params
   emp::Random& random = world->GetRandom();
 
   double start_moi = my_config->START_MOI();
@@ -36,12 +36,14 @@ void worldSetup(emp::Ptr<SymWorld> world, emp::Ptr<SymConfigBase> my_config) {
   for (size_t i = 0; i < POP_SIZE; i++){
     emp::Ptr<Host> new_org;
 
-    if (random_phen_host) {new_org.New(&random, world, my_config, random.GetDouble(-1, 1));
+    if (random_phen_host) {
+      new_org.New(&random, world, my_config, random.GetDouble(-1, 1));
     } else if (my_config->COMPETITION_MODE() && i%2==0) {
         new_org.New(&random, world, my_config, comp_host_1);
     } else if (my_config->COMPETITION_MODE() && i%2==1) {
         new_org.New(&random, world, my_config, comp_host_2);
-    } else { new_org.New(&random, world, my_config, my_config->HOST_INT());
+    } else {
+      new_org.New(&random, world, my_config, my_config->HOST_INT());
     }
     //Currently hacked because there isn't an AddOrg function, but there probably should be
     if(my_config->GRID()) {

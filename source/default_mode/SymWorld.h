@@ -681,7 +681,7 @@ public:
     emp::vector<size_t> schedule = emp::GetPermutation(GetRandom(), GetSize());
     // divvy up and distribute resources to host and symbiont in each cell
     for (size_t i : schedule) {
-      if (IsOccupied(i) == false && !sym_pop[i]){ continue;} // no organism at that cell
+      if (!IsOccupied(i) && !sym_pop[i]){ continue;} // no organism at that cell
       if(IsOccupied(i)){//can't call GetDead on a deleted sym, so
         pop[i]->Process(i);
         if (pop[i]->GetDead()) { //Check if the host died

@@ -335,16 +335,16 @@ emp::DataMonitor<int>& SymWorld::GetUninfectedHostsDataNode() {
   if(!data_node_uninf_hosts) {
     data_node_uninf_hosts.New();
     OnUpdate([this](size_t){
-  data_node_uninf_hosts -> Reset();
+      data_node_uninf_hosts -> Reset();
 
-  for (size_t i = 0; i < pop.size(); i++) {
-    if(IsOccupied(i)) {
-      if((pop[i]->GetSymbionts()).empty()) {
-        data_node_uninf_hosts->AddDatum(1);
-      }
-    } //endif
-  } //end for
-}); //end OnUpdate
+      for (size_t i = 0; i < pop.size(); i++) {
+        if(IsOccupied(i)) {
+          if((pop[i]->GetSymbionts()).empty()) {
+            data_node_uninf_hosts->AddDatum(1);
+          }
+        } //endif
+      } //end for
+    }); //end OnUpdate
   } //end if
   return *data_node_uninf_hosts;
 }

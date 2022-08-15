@@ -22,7 +22,7 @@ void CheckConfigFile(SymConfigBase& config, int argc, char * argv[]){
     std::cerr << "There was a problem in processing the options file." << std::endl;
     exit(1);
   }
-  if (args.TestUnknown() == false) {
+  if (args.HasUnknown()) {
     std::cerr << "Leftover args no good." << std::endl;
     exit(1);
   }
