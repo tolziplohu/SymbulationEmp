@@ -212,6 +212,30 @@ struct Instruction {
   Operation op;
   uint8_t args[3];
 
+  bool operator<(const Instruction &other) const {
+    if (op < other.op) {
+      return true;
+    } else if (op > other.op) {
+      return false;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      if (args[i] < other.args[i]) return true;
+      if (args[i] > other.args[i]) return false;
+    }
+    return false;
+  }
+
+  bool operator==(const Instruction &other) const {
+    if (op != other.op) {
+      return false;
+    }
+    for (int i = 0; i < 3; i++) {
+      if (args[i] != other.args[i]) return false;
+    }
+    return true;
+  }
+
   void assemble(Assembler &a) {
     switch (op % Last) {
     case Nop:
@@ -422,7 +446,7 @@ public:
     }
   }
 
-  void Print() {
+  void Print(std::ostream &out = std::cout) {
     emp::vector<uint8_t> labels;
     for (Instruction &i : *this) {
       if (i.op % Last == Operation::Label) {
@@ -466,17 +490,17 @@ public:
     for (Instruction &inst : *this) {
       Operation op = (Operation)(inst.op % Operation::Last);
       if (op == Operation::Label) {
-        std::cout << 'L' << (int)inst.args[0] << ":\n";
+        out << 'L' << (int)inst.args[0] << ":\n";
         continue;
       }
-      std::cout << "    " << op_names[op];
+      out << "    " << op_names[op];
       for (int i = op_names[op].size(); i < 12; i++) {
-        std::cout << ' ';
+        out << ' ';
       }
       for (int i = 0; i < op_arities[op_names[op]]; i++) {
         if (i != 0)
-          std::cout << ", ";
-        std::cout << 'r' << (int)(inst.args[i] % 8);
+          out << ", ";
+        out << 'r' << (int)(inst.args[i] % 8);
       }
       if (op == Operation::JumpIfLess || op == Operation::JumpIfNEq) {
         uint8_t search = inst.args[2];
@@ -485,13 +509,13 @@ public:
               return abs(x - search) < abs(y - search);
             });
         if (found == labels.end())
-          std::cout << ", <nowhere (" << (int)search << ")>";
+          out << ", <nowhere (" << (int)search << ")>";
         else
-          std::cout << ", L" << (int)*found;
+          out << ", L" << (int)*found;
       }
-      std::cout << '\n';
+      out << '\n';
     }
-    std::cout << std::endl;
+    out << std::endl;
   }
 };
 

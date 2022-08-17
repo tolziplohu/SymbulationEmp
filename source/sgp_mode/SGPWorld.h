@@ -4,6 +4,7 @@
 #include "../default_mode/SymWorld.h"
 #include "Scheduler.h"
 #include "Tasks.h"
+#include "emp/Evolve/World_structure.hpp"
 #include "emp/data/DataNode.hpp"
 #include "asmjit/core/jitruntime.h"
 
@@ -42,6 +43,7 @@ private:
   Scheduler scheduler;
   TaskSet task_set;
   emp::Ptr<SyncDataMonitor<double>> data_node_sym_donated;
+  emp::Ptr<SyncDataMonitor<double>> data_node_sym_stolen;
   emp::Ptr<SyncDataMonitor<double>> data_node_sym_earned;
   emp::vector<emp::DataMonitor<size_t>> data_node_host_tasks;
   emp::vector<emp::DataMonitor<size_t>> data_node_sym_tasks;
@@ -56,6 +58,7 @@ public:
 
   ~SGPWorld() {
     data_node_sym_donated.Delete();
+    data_node_sym_stolen.Delete();
     data_node_sym_earned.Delete();
     // The vectors will delete themselves automatically
   }
@@ -68,15 +71,6 @@ public:
    * Purpose: Allows accessing the world's task set.
    */
   TaskSet &GetTaskSet() { return task_set; }
-
-  /**
-   * Input: None
-   *
-   * Output: The configuration used for this world.
-   *
-   * Purpose: Allows accessing the world's config.
-   */
-  const emp::Ptr<SymConfigBase> GetConfig() const { return my_config; }
 
   /**
    * Input: None
@@ -116,7 +110,18 @@ public:
         }
         DoBirth(child, org.second);
       } else {
-        SymDoBirth(child, org.second);
+        emp::WorldPosition new_pos = SymDoBirth(child, org.second);
+        // Because we're not calling HorizontalTransmission, we need to adjust
+        // these data nodes here
+        emp::DataMonitor<int> &data_node_attempts_horiztrans =
+            GetHorizontalTransmissionAttemptCount();
+        data_node_attempts_horiztrans.AddDatum(1);
+
+        emp::DataMonitor<int> &data_node_successes_horiztrans =
+            GetHorizontalTransmissionSuccessCount();
+        if (new_pos.IsValid()) {
+          data_node_successes_horiztrans.AddDatum(1);
+        }
       }
     }
     to_reproduce.clear();
@@ -124,6 +129,7 @@ public:
 
   // Prototypes for data node methods
   SyncDataMonitor<double> &GetSymDonatedDataNode();
+  SyncDataMonitor<double> &GetSymStolenDataNode();
   SyncDataMonitor<double> &GetSymEarnedDataNode();
   void SetupTasksNodes();
 

@@ -9,6 +9,7 @@
 #include "Tasks.h"
 #include <cmath>
 #include <iostream>
+#include <ostream>
 #include <string>
 
 /**
@@ -65,6 +66,7 @@ public:
     state.self_completed.resize(state.world->GetTaskSet().NumTasks());
     state.shared_completed->resize(state.world->GetTaskSet().NumTasks());
   }
+    
 
   /**
    * Input: The location of the organism (used for reproduction), and the number
@@ -102,7 +104,7 @@ public:
    * Purpose: Prints out a human-readable representation of the program code of
    * the organism's genome to standard output.
    */
-  void PrintCode() { genome.Print(); }
+  void PrintCode(std::ostream &out = std::cout) { genome.Print(out); }
 };
 
 #endif

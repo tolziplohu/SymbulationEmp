@@ -28,11 +28,12 @@ default: default-mode
 	@echo Efficient mode: make efficient-mode
 	@echo Lysis mode: make lysis-mode
 	@echo PGG mode: make pgg-mode
+	@echo SGP mode: make sgp-mode
 	@echo To build the web version use: make web
 
 native: default-mode
 web: symbulation.js
-all: default-mode efficient-mode lysis-mode pgg-mode symbulation.js
+all: default-mode efficient-mode lysis-mode pgg-mode sgp-mode symbulation.js
 
 default-mode:	source/native/symbulation_default.cc
 	$(CXX_nat) $(CFLAGS_nat) source/native/symbulation_default.cc -o symbulation_default
@@ -59,6 +60,7 @@ debug:
 	@echo Efficient mode: make debug-efficient
 	@echo Lysis mode: make debug-lysis
 	@echo PGG mode: make debug-pgg
+	@echo SGP mode: make debug-sgp
 
 debug-default: CFLAGS_nat := $(CFLAGS_nat_debug)
 debug-default: default-mode 
@@ -96,6 +98,7 @@ test:
 	@echo Efficient mode testing: make test-efficient
 	@echo Lysis mode testing: make test-lysis 
 	@echo PGG mode testing: make test-pgg
+	@echo SGP mode testing: make test-sgp
 
 test-debug:
 	$(CXX_nat) $(CFLAGS_nat_debug) $(TEST_DIR)/main.cc -o symbulation.test
@@ -105,6 +108,7 @@ test-debug:
 	@echo Efficient mode: make test-debug-efficient
 	@echo Lysis mode: make test-debug-lysis 
 	@echo PGG mode: make test-debug-pgg
+	@echo SGP mode: make test-debug-sgp
 
 test-default:
 	$(CXX_nat) $(CFLAGS_nat) $(TEST_DIR)/main.cc -o symbulation.test

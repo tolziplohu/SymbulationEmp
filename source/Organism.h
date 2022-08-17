@@ -14,7 +14,11 @@ class Organism {
   virtual ~Organism() {}
   Organism & operator=(const Organism &) = default;
   Organism & operator=(Organism &&) = default;
-  bool operator==(const Organism &other) const {return (this == &other);}
+  virtual bool operator<(const Organism &other) const {
+    std::cout << "operator< called from Organism" << std::endl;
+    throw "Organism method called!";
+  };
+  virtual bool operator==(const Organism &other) const {return (this == &other);}
   bool operator!=(const Organism &other) const {return !(*this == other);}
 
   virtual std::string const GetName() {
@@ -150,7 +154,7 @@ class Organism {
   virtual void SetSymbionts(emp::vector<emp::Ptr<Organism>> _in) {
     std::cout << "SetSymbionts called from Organism" << std::endl;
     throw "Organism method called!";}
-  virtual void AddSymbiont(emp::Ptr<Organism> _in)
+  virtual int AddSymbiont(emp::Ptr<Organism> _in)
    {std::cout << "AddSymbiont called from Organism" << std::endl;
      throw "Organism method called!";}
   virtual void AddReproSym(emp::Ptr<Organism> _in) {

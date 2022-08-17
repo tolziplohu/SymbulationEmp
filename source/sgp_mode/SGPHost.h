@@ -9,7 +9,7 @@
 class SGPHost : public Host {
 private:
   CPU cpu;
-  emp::Ptr<SGPWorld> my_world;
+  const emp::Ptr<SGPWorld> my_world;
 
 public:
   /**
@@ -23,22 +23,18 @@ public:
           emp::vector<emp::Ptr<Organism>> _repro_syms = {},
           double _points = 0.0)
       : Host(_random, _world, _config, _intval, _syms, _repro_syms, _points),
-        cpu(this, _world, _random) {
-    my_world = _world;
-  }
+        cpu(this, _world, _random), my_world(_world) {}
 
   /**
-   * Constructs an SGPHost with a copy of the genome code from `old_cpu`.
+   * Constructs an SGPHost with a copy of the provided genome.
    */
   SGPHost(emp::Ptr<emp::Random> _random, emp::Ptr<SGPWorld> _world,
-          emp::Ptr<SymConfigBase> _config, const CPU &old_cpu,
+          emp::Ptr<SymConfigBase> _config, const Genome &genome,
           double _intval = 0.0, emp::vector<emp::Ptr<Organism>> _syms = {},
           emp::vector<emp::Ptr<Organism>> _repro_syms = {},
           double _points = 0.0)
       : Host(_random, _world, _config, _intval, _syms, _repro_syms, _points),
-        cpu(this, _world, _random, old_cpu.genome) {
-    my_world = _world;
-  }
+        cpu(this, _world, _random, genome), my_world(_world) {}
 
   SGPHost(const SGPHost &host)
       : Host(host), cpu(this, host.my_world, host.random, host.cpu.genome),
@@ -59,6 +55,22 @@ public:
     if (cpu.state.in_progress_repro != -1) {
       my_world->to_reproduce[cpu.state.in_progress_repro].second =
           emp::WorldPosition::invalid_id;
+    }
+  }
+
+  bool operator<(const Organism &other) const {
+    if (const SGPHost *sgp = dynamic_cast<const SGPHost *>(&other)) {
+      return cpu.genome < sgp->cpu.genome;
+    } else {
+      return false;
+    }
+  }
+
+  bool operator==(const Organism &other) const {
+    if (const SGPHost *sgp = dynamic_cast<const SGPHost *>(&other)) {
+      return cpu.genome == sgp->cpu.genome;
+    } else {
+      return false;
     }
   }
 
@@ -89,7 +101,11 @@ public:
       return;
     }
 
-    cpu.RunCPUStep(pos, my_config->CYCLES_PER_UPDATE());
+    // Randomly decide whether to run before or after the symbiont
+    bool run_before = random->P(0.5);
+    if (run_before) {
+      cpu.RunCPUStep(pos, my_config->CYCLES_PER_UPDATE());
+    }
 
     if (HasSym()) { // let each sym do whatever they need to do
       emp::vector<emp::Ptr<Organism>> &syms = GetSymbionts();
@@ -111,6 +127,11 @@ public:
         }
       } // for each sym in syms
     }   // if org has syms
+
+    if (!run_before) {
+      cpu.RunCPUStep(pos, my_config->CYCLES_PER_UPDATE());
+    }
+
     GrowOlder();
   }
 
@@ -122,8 +143,8 @@ public:
    * Purpose: To avoid creating an organism via constructor in other methods.
    */
   emp::Ptr<Organism> MakeNew() {
-    emp::Ptr<SGPHost> host_baby =
-        emp::NewPtr<SGPHost>(random, my_world, my_config, cpu, GetIntVal());
+    emp::Ptr<SGPHost> host_baby = emp::NewPtr<SGPHost>(
+        random, my_world, my_config, cpu.genome, GetIntVal());
     // This organism is reproducing, so it must have gotten off the queue
     cpu.state.in_progress_repro = -1;
     return host_baby;

@@ -70,7 +70,11 @@ protected:
   emp::Ptr<emp::DataMonitor<int>> data_node_freesymcount;
   emp::Ptr<emp::DataMonitor<int>> data_node_hostedsymcount;
   emp::Ptr<emp::DataMonitor<int>> data_node_uninf_hosts;
+  emp::Ptr<emp::DataMonitor<int>> data_node_attempts_horiztrans;
+  emp::Ptr<emp::DataMonitor<int>> data_node_successes_horiztrans;
+  emp::Ptr<emp::DataMonitor<int>> data_node_attempts_verttrans;
 
+  emp::Signal<void()> on_analyze_population_sig;
 
 public:
   /**
@@ -120,6 +124,9 @@ public:
     if (data_node_freesymcount) data_node_freesymcount.Delete();
     if (data_node_hostedsymcount) data_node_hostedsymcount.Delete();
     if (data_node_uninf_hosts) data_node_uninf_hosts.Delete();
+    if (data_node_attempts_horiztrans) data_node_attempts_horiztrans.Delete();
+    if (data_node_attempts_horiztrans) data_node_successes_horiztrans.Delete();
+    if (data_node_attempts_verttrans) data_node_attempts_verttrans.Delete();
 
     for(size_t i = 0; i < sym_pop.size(); i++){ //host population deletion is handled by empirical world destructor
       if(sym_pop[i]) {
@@ -152,6 +159,16 @@ public:
    * Purpose: To get the world's symbiont population.
    */
   emp::World<Organism>::pop_t GetSymPop() {return sym_pop;}
+
+
+  /**
+   * Input: None
+   *
+   * Output: The configuration used for this world.
+   *
+   * Purpose: Allows accessing the world's config.
+   */
+  const emp::Ptr<SymConfigBase> GetConfig() const { return my_config; }
 
 
   /**
@@ -425,12 +442,16 @@ public:
   emp::DataFile & SetupSymIntValFile(const std::string & filename);
   emp::DataFile & SetupHostIntValFile(const std::string & filename);
   emp::DataFile & SetUpFreeLivingSymFile(const std::string & filename);
+  emp::DataFile & SetUpTransmissionFile(const std::string & filename);
   virtual void SetupHostFileColumns(emp::DataFile & file);
   emp::DataMonitor<int>& GetHostCountDataNode();
   emp::DataMonitor<int>& GetSymCountDataNode();
   emp::DataMonitor<int>& GetCountHostedSymsDataNode();
   emp::DataMonitor<int>& GetCountFreeSymsDataNode();
   emp::DataMonitor<int>& GetUninfectedHostsDataNode();
+  emp::DataMonitor<int>& GetHorizontalTransmissionAttemptCount();
+  emp::DataMonitor<int>& GetHorizontalTransmissionSuccessCount();
+  emp::DataMonitor<int>& GetVerticalTransmissionAttemptCount();
   emp::DataMonitor<double,emp::data::Histogram>& GetHostIntValDataNode();
   emp::DataMonitor<double,emp::data::Histogram>& GetSymIntValDataNode();
   emp::DataMonitor<double,emp::data::Histogram>& GetFreeSymIntValDataNode();
@@ -443,42 +464,75 @@ public:
    * Input: The pointer to the symbiont that is moving, the WorldPosition of its
    * current location.
    *
-   * Output: None
+   * Output: The WorldPosition object describing the symbiont's new location (it describes an 
+   * invalid position if the symbiont is deleted during movement)
    *
    * Purpose: To move a symbiont into a new world position.
    */
-  void MoveIntoNewFreeWorldPos(emp::Ptr<Organism> sym, emp::WorldPosition parent_pos){
+  emp::WorldPosition MoveIntoNewFreeWorldPos(emp::Ptr<Organism> sym, emp::WorldPosition parent_pos){
     size_t i = parent_pos.GetPopID();
     emp::WorldPosition indexed_id = GetRandomNeighborPos(i);
     emp::WorldPosition new_pos = emp::WorldPosition(0, indexed_id.GetIndex());
-    if(new_pos.IsValid()){
+    if(IsInboundsPos(new_pos)){
       sym->SetHost(nullptr);
       AddOrgAt(sym, new_pos, parent_pos);
-    } else sym.Delete();
+      return new_pos;
+    } else {
+      sym.Delete();
+      return emp::WorldPosition(); //lack of parameters results in invalid position
+    }
   }
+
+  /**
+   * Input: The WorldPosition object to be checked.
+   *
+   * Output: Wether the input object is within world bounds.
+   *
+   * Purpose: To determine whether the location of free-living organisms
+   * is within the bounds of the free-living worlds (the size of the pop and
+   * sym_pop vectors).
+   */
+  bool IsInboundsPos(emp::WorldPosition pos){
+    if(!pos.IsValid()){
+      return false;
+    } else if (pos.GetIndex() >= pop.size()){
+      return false;
+    } else if (pos.GetPopID() >= sym_pop.size()){
+      return false;
+    }
+    return true;
+  }
+
 
   /**
    * Input: The pointer to the organism that is being birthed, and the WorldPosition location
    * of the parent symbiont.
    *
-   * Output: None
+   * Output: The WorldPosition object describing the position the symbiont was born into (index = position in a host, 0 for free living and offset by one for position in host
+   * sym vector. id = position of self or host in sym_pop or pop vector). An invalid WorldPosition object is returned if the sym was killed.
    *
    * Purpose: To birth a new symbiont. If free living symbionts is on, the new symbiont
    * can be put into an unoccupied place in the world. If not, then it will be placed
    * in a host near its parent's location, or deleted if the parent's location has
    * no eligible near-by hosts.
    */
-  void SymDoBirth(emp::Ptr<Organism> sym_baby, emp::WorldPosition parent_pos) {
+   emp::WorldPosition SymDoBirth(emp::Ptr<Organism> sym_baby, emp::WorldPosition parent_pos) {
     size_t i = parent_pos.GetPopID();
     if(my_config->FREE_LIVING_SYMS() == 0){
-      int new_pos = GetNeighborHost(i);
-      if (new_pos > -1) { //-1 means no living neighbors
-        pop[new_pos]->AddSymbiont(sym_baby);
+      int new_host_pos = GetNeighborHost(i);
+      if (new_host_pos > -1) { //-1 means no living neighbors
+        int new_index = pop[new_host_pos]->AddSymbiont(sym_baby);
+        if(new_index > 0){ //sym successfully infected
+          return emp::WorldPosition(new_index, new_host_pos);
+        } else { //sym got killed trying to infect
+          return emp::WorldPosition();
+        }
       } else {
         sym_baby.Delete();
+        return emp::WorldPosition();
       }
     } else {
-      MoveIntoNewFreeWorldPos(sym_baby, parent_pos);
+      return MoveIntoNewFreeWorldPos(sym_baby, parent_pos);
     }
   }
 
@@ -574,6 +628,17 @@ public:
   }
 
   /**
+   * Input: A function to run after the experiment has finished but before any no mutation updates have been run.
+   *
+   * Output: A key representing the added function, which can usually be ignored.
+   *
+   * Purpose: Allow performing population-level analyses before running no mutation updates.
+   */
+  emp::SignalKey OnAnalyzePopulation(const std::function<void()> & fun) {
+    return on_analyze_population_sig.AddAction(fun);
+  }
+
+  /**
    * Input: Optional boolean "verbose" that specifies whether to print the update numbers to standard output or not, defaults to true.
    *
    * Output: None
@@ -591,9 +656,14 @@ public:
       Update();
     }
 
+    on_analyze_population_sig.Trigger();
+
     int num_no_mut_updates = my_config->NO_MUT_UPDATES();
     if(num_no_mut_updates > 0) {
       SetMutationZero();
+      // Make sure that hosts stay with their symbionts: we're looking for the dominant *pair*
+      my_config->VERTICAL_TRANSMISSION(1);
+      my_config->SYM_VERT_TRANS_RES(0);
     }
 
     for (int i = 0; i < num_no_mut_updates; i++) {
@@ -605,6 +675,43 @@ public:
     }
   }
 
+  /**
+   * Get the top `config.DOMINANT_COUNT` organisms from the population, sorted by their abundance.
+   */
+  emp::vector<std::pair<emp::Ptr<Organism>, size_t>> GetDominantInfo() const {
+    emp_assert(
+      GetNumOrgs(),
+      "called GetDominantInfo on an empty population"
+    );
+
+    struct virtual_less {
+      bool operator() (const emp::Ptr<Organism> a, const emp::Ptr<Organism> b) const {
+        return *a < *b;
+      }
+    };
+
+    std::map<emp::Ptr<Organism>, size_t, virtual_less> counts;
+    for (emp::Ptr<Organism> org_ptr : GetFullPop()) {
+      if (org_ptr) ++counts[org_ptr];
+    }
+    emp::vector<std::pair<emp::Ptr<Organism>, size_t>> result(my_config->DOMINANT_COUNT());
+
+    std::partial_sort_copy(
+      std::begin(counts),
+      std::end(counts),
+      result.begin(),
+      result.end(),
+      [](const auto & p1, const auto & p2) {
+        return p1.second > p2.second; // compare by counts, but we want the biggest first
+      }
+    );
+    if (counts.size() <= result.size()) {
+      result.resize(counts.size());
+    }
+  
+    return result;
+  }
+
 
   /**
    * Input: None
@@ -613,7 +720,7 @@ public:
    *
    * Purpose: To simulate a timestep in the world, which includes calling the process functions for hosts and symbionts and updating the data nodes.
    */
-  void Update() {
+  virtual void Update() {
     emp::World<Organism>::Update();
 
     // Handle resource inflow
