@@ -22,6 +22,15 @@ class CPU {
   uint32_t *stack_pointer = &stack_buffer[32];
   uint32_t *stack_end = &stack_buffer[40];
 
+  void InitializeState() {
+    for (int i = 0; i < 64; i++) {
+      stack_buffer[i] = 0;
+    }
+    this->genome.compile();
+    state.self_completed.resize(state.world->GetTaskSet().NumTasks());
+    state.shared_completed->resize(state.world->GetTaskSet().NumTasks());
+  }
+
 public:
   Genome genome;
   CPUState state;
@@ -33,14 +42,10 @@ public:
    */
   CPU(emp::Ptr<Organism> organism, emp::Ptr<SGPWorld> world,
       emp::Ptr<emp::Random> random)
-      : genome(CreateStartProgram(&world->rt, *random, world->GetConfig())),
-        random(random), state(organism, world) {
-    for (int i = 0; i < 64; i++) {
-      stack_buffer[i] = 0;
-    }
-    genome.compile();
-    state.self_completed.resize(world->GetTaskSet().NumTasks());
-    state.shared_completed->resize(world->GetTaskSet().NumTasks());
+      : random(random),
+        genome(CreateStartProgram(&world->rt, *random, world->GetConfig())),
+        state(organism, world) {
+    InitializeState();
   }
 
   /**
@@ -48,15 +53,23 @@ public:
    */
   CPU(emp::Ptr<Organism> organism, emp::Ptr<SGPWorld> world,
       emp::Ptr<emp::Random> random, const Genome &genome)
-      : genome(genome), random(random), state(organism, world) {
-    for (int i = 0; i < 64; i++) {
-      stack_buffer[i] = 0;
-    }
-    this->genome.compile();
-    state.self_completed.resize(world->GetTaskSet().NumTasks());
-    state.shared_completed->resize(world->GetTaskSet().NumTasks());
+      : random(random), genome(genome), state(organism, world) {
+    InitializeState();
   }
 
+  CPU(const CPU &other)
+      : random(other.random), genome(other.genome),
+        state(other.state.host, other.state.world) {
+    InitializeState();
+  }
+
+  /**
+   * Input: None
+   *
+   * Output: None
+   *
+   * Purpose: Resets the CPU to its initial state.
+   */
   void Reset() {
     for (int i = 0; i < 64; i++) {
       stack_buffer[i] = 0;
@@ -66,7 +79,6 @@ public:
     state.self_completed.resize(state.world->GetTaskSet().NumTasks());
     state.shared_completed->resize(state.world->GetTaskSet().NumTasks());
   }
-    
 
   /**
    * Input: The location of the organism (used for reproduction), and the number

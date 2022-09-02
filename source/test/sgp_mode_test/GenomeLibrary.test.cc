@@ -26,7 +26,7 @@ void TestGenome(emp::Ptr<Task> task, void (ProgramBuilder::*method)()) {
   ProgramBuilder builder;
   // Call the provided method reference
   (builder.*method)();
-  CPU cpu(&organism, &world, builder.Build(100));
+  CPU cpu(&organism, &world, &random, builder.Build(&world.rt, 100));
   // cpu.PrintCode();
   cpu.state.shared_completed = emp::NewPtr<emp::vector<size_t>>();
   cpu.state.shared_completed->resize(LogicTasks.NumTasks());
@@ -93,7 +93,7 @@ TEST_CASE("Empty ProgramBuilder can't do tasks", "[sgp]") {
   TestOrg organism;
   // Empty builder
   ProgramBuilder builder;
-  CPU cpu(&organism, &world, builder.Build(100));
+  CPU cpu(&organism, &world, &random, builder.Build(&world.rt, 100));
   // cpu.PrintCode();
   cpu.state.shared_completed = emp::NewPtr<emp::vector<size_t>>();
   cpu.state.shared_completed->resize(LogicTasks.NumTasks());

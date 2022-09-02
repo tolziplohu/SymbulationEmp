@@ -73,6 +73,7 @@ protected:
   emp::Ptr<emp::DataMonitor<int>> data_node_attempts_horiztrans;
   emp::Ptr<emp::DataMonitor<int>> data_node_successes_horiztrans;
   emp::Ptr<emp::DataMonitor<int>> data_node_attempts_verttrans;
+  emp::Ptr<emp::DataMonitor<int>> data_node_successes_verttrans;
 
   emp::Signal<void()> on_analyze_population_sig;
 
@@ -127,6 +128,7 @@ public:
     if (data_node_attempts_horiztrans) data_node_attempts_horiztrans.Delete();
     if (data_node_attempts_horiztrans) data_node_successes_horiztrans.Delete();
     if (data_node_attempts_verttrans) data_node_attempts_verttrans.Delete();
+    if (data_node_successes_verttrans) data_node_successes_verttrans.Delete();
 
     for(size_t i = 0; i < sym_pop.size(); i++){ //host population deletion is handled by empirical world destructor
       if(sym_pop[i]) {
@@ -259,7 +261,8 @@ public:
    * Purpose: To determine how many resources to distribute to each organism.
    */
   int PullResources(int desired_resources) {
-    if(total_res == -1) { //if LIMITED_RES_TOTAL == -1, unlimited
+    // if LIMITED_RES_TOTAL == -1, unlimited, even if limited resources was on before
+    if (total_res == -1 || my_config->LIMITED_RES_TOTAL() == -1) { 
       return desired_resources;
     } else {
       if (total_res>=desired_resources) {
@@ -452,6 +455,7 @@ public:
   emp::DataMonitor<int>& GetHorizontalTransmissionAttemptCount();
   emp::DataMonitor<int>& GetHorizontalTransmissionSuccessCount();
   emp::DataMonitor<int>& GetVerticalTransmissionAttemptCount();
+  emp::DataMonitor<int>& GetVerticalTransmissionSuccessCount();
   emp::DataMonitor<double,emp::data::Histogram>& GetHostIntValDataNode();
   emp::DataMonitor<double,emp::data::Histogram>& GetSymIntValDataNode();
   emp::DataMonitor<double,emp::data::Histogram>& GetFreeSymIntValDataNode();
